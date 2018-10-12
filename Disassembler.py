@@ -183,7 +183,7 @@ class Disassembler:
         }
 
         # Return proper assembly instruction
-        if inst_name == 'LSL' or inst_name == 'LSR' == or inst_name == 'ASR':
+        if inst_name == 'LSL' or inst_name == 'LSR' or inst_name == 'ASR':
             inst_str = '{}\tR{}, R{}, #{}'.format(inst_name, rd, rn, shamt)
         else:
             inst_str = '{}\tR{}, R{}, R{}'.format(inst_name, rd, rn, rm)
