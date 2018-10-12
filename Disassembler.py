@@ -172,23 +172,25 @@ class Disassembler:
         rn = Disassembler.get_bits_as_decimal(9, 5, inst_dec)
         rd = Disassembler.get_bits_as_decimal(4, 0, inst_dec)
 
+        # Return proper assembly instruction
+        if inst_name == 'LSL' or inst_name == 'LSR' or inst_name == 'ASR':
+            assembly = '{}\tR{}, R{}, #{}'.format(inst_name, rd, rn, shamt)
+        else:
+            assembly = '{}\tR{}, R{}, R{}'.format(inst_name, rd, rn, rm)
+
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
+            'address': self.__address,
             'name': inst_name,
             'opcode': opcode,
             'rm': rm,
             'shamt': shamt,
             'rn': rn,
-            'rd': rd
+            'rd': rd,
+            'assembly': assembly
         }
 
-        # Return proper assembly instruction
-        if inst_name == 'LSL' or inst_name == 'LSR' or inst_name == 'ASR':
-            inst_str = '{}\tR{}, R{}, #{}'.format(inst_name, rd, rn, shamt)
-        else:
-            inst_str = '{}\tR{}, R{}, R{}'.format(inst_name, rd, rn, rm)
-
-        return inst_str
+        return assembly
 
     def __process_d(self, inst_dec, inst_name):
         """
@@ -206,9 +208,13 @@ class Disassembler:
         rn = Disassembler.get_bits_as_decimal(9, 5, inst_dec)
         rt = Disassembler.get_bits_as_decimal(4, 0, inst_dec)
 
+        assembly = '{}\tR{}, [R{}, #{}]'.format(inst_name, rt, rn, offset)
+
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
+            'address': self.__address,
             'name': inst_name,
+            'type': 'R',
             'opcode': opcode,
             'offset': offset,
             'op2': op2,
@@ -217,7 +223,7 @@ class Disassembler:
         }
 
         # Return proper assembly instruction
-        return '{}\tR{}, [R{}, #{}]'.format(inst_name, rt, rn, offset)
+        return assembly
 
     def __process_i(self, inst_dec, inst_name):
         """
@@ -234,17 +240,22 @@ class Disassembler:
         rn = Disassembler.get_bits_as_decimal(9, 5, inst_dec)
         rd = Disassembler.get_bits_as_decimal(4, 0, inst_dec)
 
+        assembly = '{}\tR{}, R{}, #{}'.format(inst_name, rd, rn, immediate)
+
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
+            'address': self.__address,
             'name': inst_name,
+            'type': 'I',
             'opcode': opcode,
             'immediate': immediate,
             'rn': rn,
-            'rd': rd
+            'rd': rd,
+            'assembly': assembly
         }
 
         # Return proper assembly instruction
-        return '{}\tR{}, R{}, #{}'.format(inst_name, rd, rn, immediate)
+        return assembly
 
     def __process_b(self, inst_dec, inst_name):
         """
@@ -259,15 +270,20 @@ class Disassembler:
         opcode = Disassembler.get_bits_as_decimal(31, 24, inst_dec)
         address = Disassembler.get_bits_as_decimal(23, 0, inst_dec, signed=True)
 
+        assembly = '{}\t#{}'.format(inst_name, address)
+
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
+            'address': self.__address,
             'name': inst_name,
+            'type': 'B',
             'opcode': opcode,
-            'address': address
+            'offset': address,
+            'assembly': assembly
         }
 
         # Return proper assembly instruction
-        return '{}\t#{}'.format(inst_name, address)
+        return assembly
 
     def __process_cb(self, inst_dec, inst_name):
         """
@@ -283,16 +299,21 @@ class Disassembler:
         offset = Disassembler.get_bits_as_decimal(23, 5, inst_dec, signed=True)
         rt = Disassembler.get_bits_as_decimal(4, 0, inst_dec)
 
+        assembly = '{}\tR{}, #{}'.format(inst_name, rt, offset)
+
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
+            'address': self.__address,
             'name': inst_name,
+            'type': 'CB',
             'opcode': opcode,
             'offset': offset,
-            'rt': rt
+            'rt': rt,
+            'assembly': assembly
         }
 
         # Return proper assembly instruction
-        return '{}\tR{}, #{}'.format(inst_name, rt, offset)
+        return assembly
 
     def __process_im(self, inst_dec, inst_name):
         """
@@ -309,17 +330,22 @@ class Disassembler:
         immediate = Disassembler.get_bits_as_decimal(20, 5, inst_dec)
         rd = Disassembler.get_bits_as_decimal(4, 0, inst_dec)
 
+        assembly = '{}\tR{}, {}, LSL {}'.format(inst_name, rd, immediate, shift * 16)
+
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
+            'address': self.__address,
             'name': inst_name,
+            'type': 'IM',
             'opcode': opcode,
             'shift': shift,
             'immediate': immediate,
-            'rd': rd
+            'rd': rd,
+            'assembly': assembly
         }
 
         # Return proper assembly instruction
-        return '{}\tR{}, {}, LSL {}'.format(inst_name, rd, immediate, shift * 16)
+        return assembly
 
     def __process_nop(self, inst_dec, inst_name):
         """
@@ -338,7 +364,10 @@ class Disassembler:
 
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
-            'name': inst_name
+            'address': self.__address,
+            'name': inst_name,
+            'type': 'NOP',
+            'assembly': 'NOP'
         }
 
         # Return proper assembly instruction
@@ -356,7 +385,10 @@ class Disassembler:
         """
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
-            'name': inst_name
+            'address': self.__address,
+            'name': inst_name,
+            'type': 'BREAK',
+            'assembly': 'BREAK'
         }
 
         # Return proper assembly instruction
