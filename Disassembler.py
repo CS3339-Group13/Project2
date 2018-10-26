@@ -214,12 +214,13 @@ class Disassembler:
         self.__processed_inst[self.__address] = {
             'address': self.__address,
             'name': inst_name,
-            'type': 'R',
+            'type': 'D',
             'opcode': opcode,
             'offset': offset,
             'op2': op2,
             'rn': rn,
-            'rt': rt
+            'rt': rt,
+            'assembly': assembly
         }
 
         # Return proper assembly instruction
@@ -318,8 +319,8 @@ class Disassembler:
     def __process_im(self, inst_dec, inst_name):
         """
         Disassembles a CB-format ARM instruction
-            opcode        immediate   rd
-            9         2   18          5
+            opcode  shift  immediate   rd
+            9       2      16          5
         :param inst_dec: The decimal value of the 32-bit instruction
         :param inst_name: The assembly name of the instruction
         :return: A string containing the ARM assembly instruction
