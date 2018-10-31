@@ -68,6 +68,7 @@ class Disassembler:
         with open(self.__input_file, 'r') as f:
             for line in f:
                 line = line.rstrip('\n')
+                line = line.rstrip(' ')
                 line_num += 1
                 if len(line) != 32:
                     raise ValueError('Invalid instruction on line {}: \'{}\''.format(line_num, line))
