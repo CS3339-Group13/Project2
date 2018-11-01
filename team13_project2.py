@@ -1,5 +1,6 @@
 import sys
 from Disassembler import Disassembler
+from pprint import pprint
 
 
 class Simulator:
@@ -275,6 +276,7 @@ if __name__ == '__main__':
     d.run()
     processed_inst = d.get_processed_inst()
     processed_data = d.get_processed_data()
+    pprint(processed_inst)
 
     s = Simulator(processed_inst, processed_data, outfile)
     s.run()

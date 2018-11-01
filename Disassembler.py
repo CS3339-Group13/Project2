@@ -59,6 +59,7 @@ class Disassembler:
             self.__process_lines()
         except ValueError as ve:
             print >> sys.stderr, ve
+            quit()
 
     def __read_file(self):
         """
@@ -67,10 +68,10 @@ class Disassembler:
         line_num = 0
         with open(self.__input_file, 'r') as f:
             for line in f:
-                line = line.rstrip('\n')
+                line = line.rstrip()
                 line_num += 1
                 if len(line) != 32:
-                    raise ValueError('Invalid instruction on line {}: \'{}\''.format(line_num, line))
+                    raise ValueError('ERROR: Invalid instruction on line {}: \'{}\''.format(line_num, line))
                 self.__lines_dec.append(int(line, 2))
 
     def __process_lines(self):
@@ -96,7 +97,7 @@ class Disassembler:
                         out_file.write(f(line, inst_info[1]) + '\n')
 
                 if not valid:
-                    raise ValueError('Invalid instruction on line {}: \'{}\''.format(line_num, line))
+                    raise ValueError('ERROR: Invalid instruction on line {}: \'{}\''.format(line_num, line))
 
                 # Set data flag to True when BREAK is reached
                 if line == self.break_inst:
@@ -361,7 +362,7 @@ class Disassembler:
         # If the instruction isn't all 0s, raise error because opcode is zero -> invalid instruction
         if inst_dec != 0:
             bin_str = '{0:032b}'.format(inst_dec)
-            raise ValueError('Invalid instruction on line {}: \'{}\''.format((self.__address - 96) / 4, bin_str))
+            raise ValueError('ERROR: Invalid instruction on line {}: \'{}\''.format((self.__address - 96) / 4, bin_str))
 
         # Add instruction fields to data structure
         self.__processed_inst[self.__address] = {
