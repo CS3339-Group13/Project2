@@ -1,6 +1,5 @@
 import sys
 from Disassembler import Disassembler
-from pprint import pprint
 
 
 class Simulator:
@@ -12,6 +11,7 @@ class Simulator:
         self.__memory = data
         self.__registers = [0] * num_registers
         self.__pc = 96
+        self.__cycle = 0
 
     def run(self):
         """
@@ -20,15 +20,16 @@ class Simulator:
         type = ''
         out = open(self.__output_file + '_sim.txt', 'w')
         while type != 'BREAK':
+            self.__cycle += 1
             try:
                 inst = self.__instructions[self.__pc]
+                type = inst['type']
+                f = getattr(self, '_Simulator__simulate_' + type.lower())
+                f(inst)
+                out.write(self.__get_sim_str(inst))
             except KeyError:
                 print >> sys.stderr, "ERROR: Can't access instruction outside instruction memory ({})".format(self.__pc)
                 quit(1)
-            type = inst['type']
-            f = getattr(self, '_Simulator__simulate_' + type.lower())
-            f(inst)
-            out.write(self.__get_sim_str(inst))
 
     def __simulate_r(self, inst):
         """
@@ -45,14 +46,14 @@ class Simulator:
         rn_val = self.__read_register(rn)
 
         op_dict = {
-            'AND': rm_val & rn_val,
-            'ADD': rm_val + rn_val,
-            'ORR': rm_val | rn_val,
-            'EOR': rm_val ^ rn_val,
-            'SUB': rm_val - rn_val,
-            'ASR': rm_val >> shamt,
-            'LSR': (rm_val % (1 << 32)) >> shamt,
-            'LSL': rm_val << shamt
+            'AND': rn_val & rm_val,
+            'ADD': rn_val + rm_val,
+            'ORR': rn_val | rm_val,
+            'EOR': rn_val ^ rm_val,
+            'SUB': rn_val - rm_val,
+            'ASR': rn_val >> shamt,
+            'LSR': (rn_val % (1 << 32)) >> shamt,
+            'LSL': rn_val << shamt
         }
         rd_val = op_dict[name]
         self.__write_register(rd, rd_val)
@@ -114,8 +115,8 @@ class Simulator:
         """
         name = inst['name']
         offset = inst['offset']
-        rt = inst['rt']
-        if (name == 'CBZ' and rt == 0) or (name == 'CBNZ' and rt != 0):
+        rt_val = self.__read_register(inst['rt'])
+        if (name == 'CBZ' and rt_val == 0) or (name == 'CBNZ' and rt_val != 0):
             self.__pc += offset * 4
         else:
             self.__pc += 4
@@ -135,7 +136,7 @@ class Simulator:
             self.__write_register(rd, val)
         elif name == 'MOVK':
             rd_val = self.__read_register(rd)
-            mask = 0xFFFF << (shift * 16)
+            mask = (0x000000000000FFFF << (shift * 16)) ^ 0xFFFFFFFFFFFFFFFF
             rd_val = (rd_val & mask) | val
             self.__write_register(rd, rd_val)
 
@@ -195,7 +196,7 @@ class Simulator:
         :return:
         """
         out = '=' * 21 + '\n' \
-               + 'cycle:{}\t{}\t{}\n'.format(int((self.__pc - 96) / 4), inst['address'], inst['assembly']) + '\n' \
+               + 'cycle:{}\t{}\t{}\n'.format(self.__cycle, inst['address'], inst['assembly']) + '\n' \
                + self.registers_to_string() \
                + '\n' \
                + self.memory_to_string()
@@ -229,35 +230,36 @@ class Simulator:
         return out
 
     def memory_to_string(self):
-        """
-        Returns a string of the memory, with a label for each line.
-        :return: A string representation of the memory.
-        """
-        out = 'data:'
 
-        # Fix stupid formatting, thanks Greg
-        if len(self.__memory) > 0:
-            # Add 0s from beginning to first
-            first_data = min(self.__memory.keys())
-            for a in range(self.__data_begin, first_data, 4):
-                self.__memory[a] = 0
+        out = 'data:\n'
 
-            # Add 0s from last to end of line
-            last_data = max(self.__memory.keys())
-            a = last_data + 4
-            while (a - first_data) % 8 != 0:
-                self.__memory[a] = 0
-                a += 4
+        data_max = max(self.__memory.keys())
 
-        # Print useful information
-        addresses = list(self.__memory.keys())
-        addresses.sort()
-        for i, addr in enumerate(addresses):
-            if i % 8 == 0:
-                out += '\n{}:\t{}'.format(addr, self.__memory[addr])
+        col = 0
+        for a in range(self.__data_begin, data_max + 4, 4):
+
+            if col == 0:
+                out += str(a) + ':'
+
+            if a not in self.__memory.keys():
+                val = 0
             else:
-                out += '\t{}'.format(self.__memory[addr])
-        out += '\n' * 2
+                val = self.__memory[a]
+
+            out += '\t' + str(val)
+
+            if col == 7:
+                out += '\n'
+                col = 0
+            else:
+                col += 1
+
+        while col < 8:
+            out += '\t0'
+            col += 1
+
+        out += '\n\n'
+
         return out
 
 
@@ -276,7 +278,6 @@ if __name__ == '__main__':
     d.run()
     processed_inst = d.get_processed_inst()
     processed_data = d.get_processed_data()
-    pprint(processed_inst)
 
     s = Simulator(processed_inst, processed_data, outfile)
     s.run()

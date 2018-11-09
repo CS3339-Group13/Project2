@@ -183,6 +183,7 @@ class Disassembler:
         self.__processed_inst[self.__address] = {
             'address': self.__address,
             'name': inst_name,
+            'type': 'R',
             'opcode': opcode,
             'rm': rm,
             'shamt': shamt,
